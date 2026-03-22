@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { getUsageStatus } from '@/lib/usage/check-limits'
+import { apiError } from '@/lib/api-error'
 
 export async function GET() {
   const user = await getAuthenticatedUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return apiError('Unauthorized', 'UNAUTHORIZED', 401)
   }
 
   try {
@@ -13,6 +14,6 @@ export async function GET() {
     return NextResponse.json(usage)
   } catch (error) {
     console.error('Usage API error:', error)
-    return NextResponse.json({ error: 'Failed to fetch usage status' }, { status: 500 })
+    return apiError('Failed to fetch usage status', 'USAGE_ERROR', 500)
   }
 }

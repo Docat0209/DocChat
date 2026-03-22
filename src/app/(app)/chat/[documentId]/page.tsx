@@ -101,7 +101,12 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
     id: chatId ?? undefined,
     transport,
     onError: (err) => {
-      toast.error(err.message || 'Failed to send message. Please try again.')
+      try {
+        const parsed = JSON.parse(err.message) as { error?: string }
+        toast.error(parsed.error || 'Failed to send message. Please try again.')
+      } catch {
+        toast.error(err.message || 'Failed to send message. Please try again.')
+      }
     },
   })
 

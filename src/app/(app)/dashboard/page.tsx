@@ -16,6 +16,7 @@ const ACCEPTED_TYPES = [
 ]
 
 const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.txt']
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 
 function isAcceptedFile(file: File): boolean {
   if (ACCEPTED_TYPES.includes(file.type)) return true
@@ -36,6 +37,13 @@ export default function HomePage() {
       if (!isAcceptedFile(file)) {
         setErrorMessage('Unsupported file type. Please upload a PDF, DOCX, or TXT file.')
         setStatus('error')
+        return
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        setErrorMessage('File too large. Maximum size is 20MB.')
+        setStatus('error')
+        toast.error('File too large. Maximum size is 20MB.')
         return
       }
 
@@ -69,6 +77,7 @@ export default function HomePage() {
 
         setStatus('processing')
         toast.success('Document uploaded successfully')
+        router.refresh()
 
         if (data.id) {
           router.push(`/chat/${data.id}`)
