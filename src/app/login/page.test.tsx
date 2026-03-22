@@ -23,67 +23,10 @@ vi.mock('@/lib/supabase/client', () => ({
 
 const { default: LoginPage } = await import('./page')
 
-describe('LoginPage — Google OAuth error handling', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('shows user-friendly error when provider is not enabled', async () => {
-    mockSignInWithOAuth.mockResolvedValueOnce({
-      error: { message: 'Unsupported provider: provider is not enabled' },
-    })
-
+describe('LoginPage — Google OAuth button visibility', () => {
+  it('hides Google button when NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED is not true', () => {
     render(<LoginPage />)
-
-    const googleButton = screen.getByRole('button', { name: /continue with google/i })
-    await userEvent.click(googleButton)
-
-    expect(
-      await screen.findByText(
-        'Google sign-in is not available yet. Please use email and password.',
-      ),
-    ).toBeInTheDocument()
-  })
-
-  it('shows user-friendly error when error_code is validation_failed', async () => {
-    mockSignInWithOAuth.mockResolvedValueOnce({
-      error: { message: 'Some error', error_code: 'validation_failed' },
-    })
-
-    render(<LoginPage />)
-
-    const googleButton = screen.getByRole('button', { name: /continue with google/i })
-    await userEvent.click(googleButton)
-
-    expect(
-      await screen.findByText(
-        'Google sign-in is not available yet. Please use email and password.',
-      ),
-    ).toBeInTheDocument()
-  })
-
-  it('shows generic error message for other OAuth failures', async () => {
-    mockSignInWithOAuth.mockResolvedValueOnce({
-      error: { message: 'Network request failed' },
-    })
-
-    render(<LoginPage />)
-
-    const googleButton = screen.getByRole('button', { name: /continue with google/i })
-    await userEvent.click(googleButton)
-
-    expect(await screen.findByText('Network request failed')).toBeInTheDocument()
-  })
-
-  it('does not show error when OAuth succeeds (redirects)', async () => {
-    mockSignInWithOAuth.mockResolvedValueOnce({ error: null })
-
-    render(<LoginPage />)
-
-    const googleButton = screen.getByRole('button', { name: /continue with google/i })
-    await userEvent.click(googleButton)
-
-    expect(screen.queryByText(/Google sign-in is not available/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /continue with google/i })).not.toBeInTheDocument()
   })
 })
 
