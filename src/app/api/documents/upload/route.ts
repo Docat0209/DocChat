@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { extractText } from '@/lib/extraction/extract-text'
 import { processDocument } from '@/lib/pipeline/process-document'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
+import { getUsageStatus } from '@/lib/usage/check-limits'
 import type { DocumentInsert } from '@/types/database'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
@@ -24,6 +25,14 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const usage = await getUsageStatus(user.id)
+    if (!usage.documents.canUpload) {
+      return NextResponse.json(
+        { error: 'Document limit reached. Upgrade to Pro for unlimited documents.', code: 'DOCUMENT_LIMIT' },
+        { status: 403 },
+      )
     }
 
     const formData = await request.formData()
