@@ -3,32 +3,46 @@ import { extractText } from '@/lib/extraction/extract-text'
 import fs from 'fs'
 import path from 'path'
 
-describe('Text Extraction (Integration)', () => {
-  it('extracts text from a real TXT file', async () => {
-    const buffer = fs.readFileSync(path.join(__dirname, '../fixtures/sample.txt'))
-    const result = await extractText(buffer as unknown as Buffer, 'text/plain')
-    expect(result.pages.length).toBeGreaterThan(0)
-    expect(result.totalCharacters).toBeGreaterThan(0)
-    expect(result.pages[0].content).toBeTruthy()
+const FIXTURES = path.join(__dirname, '../fixtures')
+
+describe('Text Extraction - All File Types (Integration)', () => {
+  it('extracts text from a real TXT file with multiple sections', async () => {
+    const buffer = fs.readFileSync(path.join(FIXTURES, 'test-document.txt'))
+    const result = await extractText(buffer, 'text/plain')
+    expect(result.pages.length).toBeGreaterThanOrEqual(4) // 4 sections
+    expect(result.totalCharacters).toBeGreaterThan(500)
+    const allText = result.pages.map((p) => p.content).join(' ')
+    expect(allText).toContain('Code Quality')
   })
 
-  it('extracts text from a real PDF file', async () => {
-    const pdfPath = path.join(__dirname, '../fixtures/sample.pdf')
-    if (!fs.existsSync(pdfPath)) {
-      console.warn('Skipping PDF test — sample.pdf not found')
-      return
-    }
-    const buffer = fs.readFileSync(pdfPath)
-    const result = await extractText(buffer as unknown as Buffer, 'application/pdf')
-    expect(result.pages.length).toBeGreaterThan(0)
+  it('extracts text from a real PDF file with multiple pages', async () => {
+    const buffer = fs.readFileSync(path.join(FIXTURES, 'test-document.pdf'))
+    const result = await extractText(buffer, 'application/pdf')
+    expect(result.pages.length).toBeGreaterThanOrEqual(2) // At least 2 pages
+    expect(result.totalCharacters).toBeGreaterThan(200)
+    // Verify content from page 1
+    const allText = result.pages.map((p) => p.content).join(' ')
+    expect(allText.toLowerCase()).toContain('artificial intelligence')
+  })
+
+  it('extracts text from a real DOCX file with chapters', async () => {
+    const buffer = fs.readFileSync(path.join(FIXTURES, 'test-document.docx'))
+    const result = await extractText(
+      buffer,
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+    expect(result.pages.length).toBeGreaterThanOrEqual(1)
+    expect(result.totalCharacters).toBeGreaterThan(200)
+    const allText = result.pages.map((p) => p.content).join(' ')
+    expect(allText.toLowerCase()).toContain('climate change')
   })
 
   it('throws on unsupported file type', async () => {
-    const buffer = Buffer.from('test')
+    const buffer = Buffer.from('test content')
     await expect(extractText(buffer, 'application/csv')).rejects.toThrow('Unsupported file type')
   })
 
-  it('handles empty TXT file', async () => {
+  it('handles empty TXT file gracefully', async () => {
     const buffer = Buffer.from('')
     const result = await extractText(buffer, 'text/plain')
     expect(result.pages.length).toBe(0)
