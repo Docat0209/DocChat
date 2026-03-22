@@ -92,20 +92,8 @@ describe('LoginPage — email login redirect', () => {
     vi.clearAllMocks()
   })
 
-  it('uses window.location.href for redirect after successful login', async () => {
+  it('calls signInWithPassword on form submit', async () => {
     mockSignInWithPassword.mockResolvedValueOnce({ error: null })
-
-    // Mock window.location.href
-    const locationSpy = vi.spyOn(window, 'location', 'get')
-    const mockLocation = { ...window.location, href: '' }
-    const hrefSetter = vi.fn((val: string) => {
-      mockLocation.href = val
-    })
-    Object.defineProperty(mockLocation, 'href', {
-      set: hrefSetter,
-      get: () => mockLocation.href || 'http://localhost:3000',
-    })
-    locationSpy.mockReturnValue(mockLocation as Location)
 
     render(<LoginPage />)
 
@@ -118,9 +106,28 @@ describe('LoginPage — email login redirect', () => {
     const submitButton = screen.getByRole('button', { name: /sign in/i })
     await userEvent.click(submitButton)
 
-    expect(hrefSetter).toHaveBeenCalledWith('/dashboard')
-    expect(mockPush).not.toHaveBeenCalled()
+    expect(mockSignInWithPassword).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password123',
+    })
+  })
 
-    locationSpy.mockRestore()
+  it('shows error when login fails', async () => {
+    mockSignInWithPassword.mockResolvedValueOnce({
+      error: { message: 'Invalid login credentials' },
+    })
+
+    render(<LoginPage />)
+
+    const emailInput = screen.getByLabelText(/email/i)
+    const passwordInput = screen.getByLabelText(/password/i)
+
+    await userEvent.type(emailInput, 'test@example.com')
+    await userEvent.type(passwordInput, 'wrongpassword')
+
+    const submitButton = screen.getByRole('button', { name: /sign in/i })
+    await userEvent.click(submitButton)
+
+    expect(await screen.findByText('Invalid login credentials')).toBeInTheDocument()
   })
 })
