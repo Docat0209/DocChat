@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Upload, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { LogoutButton } from '@/components/logout-button'
 
 type UploadStatus = 'idle' | 'uploading' | 'processing' | 'error'
 
@@ -111,6 +112,10 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-4">
+      <div className="fixed right-4 top-4">
+        <LogoutButton />
+      </div>
+
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight">DocChat</h1>
         <p className="mt-2 text-muted-foreground">Upload a document and start asking questions</p>
