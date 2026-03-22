@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server'
 import { openai } from '@ai-sdk/openai'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { retrieveChunks, type RetrievedChunk } from '@/lib/rag/retrieve'
-
-const PLACEHOLDER_USER_ID = 'anonymous'
 
 function buildSystemPrompt(context: string): string {
   return `You are a helpful document assistant. Answer questions based ONLY on the provided context.
@@ -35,12 +34,18 @@ function extractTextFromUIMessage(message: UIMessage): string {
 async function getOrCreateChat(
   documentId: string,
   chatId: string | undefined,
+  userId: string,
   firstMessageContent: string,
 ): Promise<string> {
   const adminClient = createAdminClient()
 
   if (chatId) {
-    const { data, error } = await adminClient.from('chats').select('id').eq('id', chatId).single()
+    const { data, error } = await adminClient
+      .from('chats')
+      .select('id')
+      .eq('id', chatId)
+      .eq('user_id', userId)
+      .single()
 
     if (error || !data) {
       throw new Error('Chat not found')
@@ -55,7 +60,7 @@ async function getOrCreateChat(
     .from('chats')
     .insert({
       document_id: documentId,
-      user_id: PLACEHOLDER_USER_ID,
+      user_id: userId,
       title,
     })
     .select('id')
@@ -70,6 +75,11 @@ async function getOrCreateChat(
 
 export async function POST(request: Request) {
   try {
+    const user = await getAuthenticatedUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const {
       messages,
@@ -95,15 +105,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Last message must be from user' }, { status: 400 })
     }
 
-    // Verify document exists and is ready
+    // Verify document exists, is ready, and belongs to the authenticated user
     const adminClient = createAdminClient()
     const { data: document, error: docError } = await adminClient
       .from('documents')
-      .select('id, status')
+      .select('id, status, user_id')
       .eq('id', documentId)
       .single()
 
-    if (docError || !document) {
+    if (docError || !document || document.user_id !== user.id) {
+      // Return 404 for all cases to prevent document enumeration
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
@@ -123,7 +134,7 @@ export async function POST(request: Request) {
     const systemPrompt = buildSystemPrompt(context)
 
     // Create or get chat record
-    const resolvedChatId = await getOrCreateChat(documentId, chatId, userContent)
+    const resolvedChatId = await getOrCreateChat(documentId, chatId, user.id, userContent)
 
     // Save user message to DB
     await adminClient.from('messages').insert({
