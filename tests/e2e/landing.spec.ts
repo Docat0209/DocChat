@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Landing Page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.context().clearCookies()
+  })
+
   test('renders hero section', async ({ page }) => {
     await page.goto('/')
     await expect(

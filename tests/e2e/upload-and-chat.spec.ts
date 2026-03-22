@@ -19,11 +19,8 @@ test.describe('Upload and Chat', () => {
   })
 
   test('upload TXT file and navigate to chat', async ({ page }) => {
-    const uploadButton = page.getByLabel('Upload document')
-    await uploadButton.click()
-
     const fileChooserPromise = page.waitForEvent('filechooser')
-    await uploadButton.click()
+    await page.getByLabel('Upload document').click()
     const fileChooser = await fileChooserPromise
     await fileChooser.setFiles(
       path.join(__dirname, '../fixtures/sample.txt')
@@ -37,9 +34,8 @@ test.describe('Upload and Chat', () => {
     const docLink = page.locator('[data-testid="document-item"]').first()
 
     if (!(await docLink.isVisible({ timeout: 3000 }).catch(() => false))) {
-      const uploadButton = page.getByLabel('Upload document')
       const fileChooserPromise = page.waitForEvent('filechooser')
-      await uploadButton.click()
+      await page.getByLabel('Upload document').click()
       const fileChooser = await fileChooserPromise
       await fileChooser.setFiles(
         path.join(__dirname, '../fixtures/sample.txt')
