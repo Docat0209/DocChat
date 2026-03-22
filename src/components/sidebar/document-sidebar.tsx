@@ -435,7 +435,7 @@ function SidebarContent({
 
       {/* Usage indicator + Upgrade / Manage subscription */}
       <div className="border-t p-3 space-y-2">
-        <UsageIndicator />
+        <UsageIndicator refreshTrigger={documents.length} />
         {plan && <UpgradeButton plan={plan} />}
       </div>
 

@@ -25,7 +25,11 @@ function formatLimit(current: number, limit: number): string {
   return `${current}/${limit}`
 }
 
-export function UsageIndicator() {
+interface UsageIndicatorProps {
+  refreshTrigger?: number
+}
+
+export function UsageIndicator({ refreshTrigger }: UsageIndicatorProps) {
   const [usage, setUsage] = useState<UsageStatus | null>(null)
 
   useEffect(() => {
@@ -45,7 +49,7 @@ export function UsageIndicator() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [refreshTrigger])
 
   if (!usage) return null
 
