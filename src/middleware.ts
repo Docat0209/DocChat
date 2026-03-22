@@ -31,16 +31,18 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  if (!user && !PUBLIC_ROUTES.includes(pathname)) {
+  // Authenticated users on landing/login/signup → redirect to /dashboard
+  if (user && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
+    const dashboardUrl = request.nextUrl.clone()
+    dashboardUrl.pathname = '/dashboard'
+    return NextResponse.redirect(dashboardUrl)
+  }
+
+  // Unauthenticated users on protected routes → redirect to /login
+  if (!user && !PUBLIC_ROUTES.includes(pathname) && !pathname.startsWith('/auth/')) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
-  }
-
-  if (user && (pathname === '/login' || pathname === '/signup')) {
-    const homeUrl = request.nextUrl.clone()
-    homeUrl.pathname = '/'
-    return NextResponse.redirect(homeUrl)
   }
 
   return response
