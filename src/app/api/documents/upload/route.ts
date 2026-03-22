@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractText } from '@/lib/extraction/extract-text'
 import { processDocument } from '@/lib/pipeline/process-document'
+import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import type { DocumentInsert } from '@/types/database'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
@@ -20,6 +21,11 @@ function getFileExtension(filename: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file')
 
@@ -62,8 +68,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Use placeholder userId until auth is implemented
-    const userId = 'anonymous'
+    const userId = user.id
     const documentId = crypto.randomUUID()
     const storagePath = `documents/${userId}/${documentId}/${file.name}`
 
