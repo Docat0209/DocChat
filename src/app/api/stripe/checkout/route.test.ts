@@ -86,6 +86,7 @@ describe('POST /api/stripe/checkout', () => {
         customer: 'cus_new_123',
         mode: 'subscription',
         line_items: [{ price: 'price_test_123', quantity: 1 }],
+        metadata: { userId: 'user-1' },
       }),
     )
   })
