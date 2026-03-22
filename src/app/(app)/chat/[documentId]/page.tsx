@@ -1,9 +1,8 @@
 'use client'
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { use, useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { toast } from 'sonner'
 import { AlertTriangle, Loader2, MessageSquare, Plus, RefreshCw, Send } from 'lucide-react'
@@ -103,17 +102,7 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
     fetchDocument()
   }, [documentId])
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        body: { documentId, chatId },
-      }),
-    [documentId, chatId],
-  )
-
   const { messages, sendMessage, status, error, setMessages } = useChat({
-    id: chatId ?? undefined,
-    transport,
     onError: (err) => {
       try {
         const parsed = JSON.parse(err.message) as { error?: string }
@@ -189,8 +178,8 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
     const trimmed = input.trim()
     if (!trimmed || isLoading) return
     setInput('')
-    sendMessage({ text: trimmed })
-  }, [input, isLoading, sendMessage])
+    sendMessage({ text: trimmed }, { body: { documentId, chatId } })
+  }, [input, isLoading, sendMessage, documentId, chatId])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -206,9 +195,9 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
     (question: string) => {
       if (isLoading) return
       setInput('')
-      sendMessage({ text: question })
+      sendMessage({ text: question }, { body: { documentId, chatId } })
     },
-    [isLoading, sendMessage],
+    [isLoading, sendMessage, documentId, chatId],
   )
 
   const handleNewChat = useCallback(() => {
@@ -222,10 +211,10 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
         (p): p is { type: 'text'; text: string } => p.type === 'text',
       )
       if (textPart) {
-        sendMessage({ text: textPart.text })
+        sendMessage({ text: textPart.text }, { body: { documentId, chatId } })
       }
     }
-  }, [messages, sendMessage])
+  }, [messages, sendMessage, documentId, chatId])
 
   const isProcessing = documentInfo?.status === 'processing' || documentInfo?.status === 'uploading'
   const isFailed = documentInfo?.status === 'failed'
