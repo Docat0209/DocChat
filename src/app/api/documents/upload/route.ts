@@ -100,7 +100,11 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
-      return apiError('Failed to upload file to storage', 'STORAGE_ERROR')
+      return apiError(
+        `Failed to upload file to storage: ${uploadError.message}`,
+        'STORAGE_ERROR',
+        500,
+      )
     }
 
     // Get public URL for the uploaded file
