@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { LogoutButton } from '@/components/logout-button'
 import { UpgradeButton } from '@/components/upgrade-button'
 import { UsageIndicator } from '@/components/sidebar/usage-indicator'
@@ -58,6 +59,12 @@ interface DocumentSidebarProps {
   isUploading: boolean
   isLoading: boolean
   plan?: SubscriptionPlan
+  userEmail?: string
+}
+
+function getUserInitial(email?: string): string {
+  if (!email) return '?'
+  return email.charAt(0).toUpperCase()
 }
 
 const ACCEPTED_EXTENSIONS = '.pdf,.docx,.txt'
@@ -244,6 +251,7 @@ function SidebarContent({
   isUploading,
   isLoading,
   plan,
+  userEmail,
   onNavigate,
 }: DocumentSidebarProps & { onNavigate?: () => void }) {
   const router = useRouter()
@@ -347,7 +355,14 @@ function SidebarContent({
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="text-lg font-semibold">DocChat</h2>
-        <LogoutButton />
+        <div className="flex items-center gap-2">
+          <Avatar size="sm">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              {getUserInitial(userEmail)}
+            </AvatarFallback>
+          </Avatar>
+          <LogoutButton />
+        </div>
       </div>
 
       {/* Upload button */}

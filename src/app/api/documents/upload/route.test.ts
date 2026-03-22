@@ -223,7 +223,7 @@ describe('POST /api/documents/upload', () => {
     expect(response.status).toBe(500)
 
     const body = await response.json()
-    expect(body.error).toBe('Failed to upload file to storage')
+    expect(body.error).toBe('Failed to upload file to storage: Storage full')
     expect(body.code).toBe('STORAGE_ERROR')
   })
 })

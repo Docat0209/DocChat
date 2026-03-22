@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2, Crown, Settings } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import type { SubscriptionPlan } from '@/types/database'
 
@@ -21,7 +22,11 @@ export function UpgradeButton({ plan }: UpgradeButtonProps) {
 
       if (data.url) {
         window.location.href = data.url
+      } else {
+        toast.error(data.error || 'Unable to start checkout. Payments may not be configured yet.')
       }
+    } catch {
+      toast.error('Unable to start checkout. Please try again later.')
     } finally {
       setIsLoading(false)
     }

@@ -60,7 +60,21 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
   const [documentInfo, setDocumentInfo] = useState<DocumentInfo | null>(null)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const [documentNotFound, setDocumentNotFound] = useState(false)
+  const [userInitial, setUserInitial] = useState<string | undefined>(undefined)
   const hasSyncedChatId = useRef(false)
+
+  useEffect(() => {
+    async function fetchUser() {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user?.email) {
+        setUserInitial(user.email.charAt(0).toUpperCase())
+      }
+    }
+    fetchUser()
+  }, [])
 
   useEffect(() => {
     async function fetchDocument() {
@@ -314,7 +328,14 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
               message.role === 'assistant' &&
               index === messages.length - 1 &&
               status === 'streaming'
-            return <ChatMessage key={message.id} message={message} isStreaming={isLastAssistant} />
+            return (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                isStreaming={isLastAssistant}
+                userInitial={userInitial}
+              />
+            )
           })}
 
           {isThinking && (

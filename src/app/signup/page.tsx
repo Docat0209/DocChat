@@ -93,8 +93,13 @@ export default function SignupPage() {
     })
 
     if (oauthError) {
-      if (oauthError.message.toLowerCase().includes('provider')) {
-        setError('Google OAuth is not configured yet. Please use email/password to sign up.')
+      const msg = oauthError.message?.toLowerCase() ?? ''
+      if (
+        msg.includes('provider') ||
+        ('error_code' in oauthError &&
+          (oauthError as Record<string, unknown>).error_code === 'validation_failed')
+      ) {
+        setError('Google sign-in is not available yet. Please use email and password.')
       } else {
         setError(oauthError.message)
       }
