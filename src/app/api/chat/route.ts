@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
 import { openai } from '@ai-sdk/openai'
 import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { retrieveChunks, type RetrievedChunk } from '@/lib/rag/retrieve'
 import { getUsageStatus, incrementQuestionCount } from '@/lib/usage/check-limits'
+import { apiError } from '@/lib/api-error'
 
 function buildSystemPrompt(context: string): string {
   return `You are a helpful document assistant. Answer questions based ONLY on the provided context.
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('Unauthorized', 'UNAUTHORIZED', 401)
     }
 
     const body = await request.json()
@@ -98,27 +98,25 @@ export async function POST(request: Request) {
 
     const usage = await getUsageStatus(user.id)
     if (!usage.questions.canAsk) {
-      return NextResponse.json(
-        {
-          error: 'Daily question limit reached. Upgrade to Pro for unlimited questions.',
-          code: 'QUESTION_LIMIT',
-        },
-        { status: 403 },
+      return apiError(
+        'Daily question limit reached. Upgrade to Pro for unlimited questions.',
+        'QUESTION_LIMIT',
+        403,
       )
     }
 
     if (!documentId) {
-      return NextResponse.json({ error: 'documentId is required' }, { status: 400 })
+      return apiError('documentId is required', 'MISSING_DOCUMENT_ID', 400)
     }
 
     if (!messages || messages.length === 0) {
-      return NextResponse.json({ error: 'messages array must not be empty' }, { status: 400 })
+      return apiError('messages array must not be empty', 'EMPTY_MESSAGES', 400)
     }
 
     const lastMessage = messages[messages.length - 1]
 
     if (lastMessage.role !== 'user') {
-      return NextResponse.json({ error: 'Last message must be from user' }, { status: 400 })
+      return apiError('Last message must be from user', 'INVALID_ROLE', 400)
     }
 
     // Verify document exists, is ready, and belongs to the authenticated user
@@ -130,14 +128,14 @@ export async function POST(request: Request) {
       .single()
 
     if (docError || !document || document.user_id !== user.id) {
-      // Return 404 for all cases to prevent document enumeration
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      return apiError('Document not found', 'DOCUMENT_NOT_FOUND', 404)
     }
 
     if (document.status !== 'ready') {
-      return NextResponse.json(
-        { error: `Document is not ready for chat. Current status: ${document.status}` },
-        { status: 400 },
+      return apiError(
+        `Document is not ready for chat. Current status: ${document.status}`,
+        'DOCUMENT_NOT_READY',
+        400,
       )
     }
 
@@ -186,12 +184,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Chat API error:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    )
+    return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
 }

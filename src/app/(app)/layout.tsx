@@ -1,8 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { DocumentSidebar } from '@/components/sidebar/document-sidebar'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { createClient } from '@/lib/supabase/client'
 import type { Document } from '@/types/database'
 
@@ -12,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const previousDocumentsRef = useRef<Document[]>([])
 
   // Extract current document ID from path
   const currentDocumentId = pathname.startsWith('/chat/')
@@ -36,6 +39,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchDocuments()
   }, [fetchDocuments])
+
+  // Detect document status transitions and show toasts
+  useEffect(() => {
+    const prev = previousDocumentsRef.current
+    if (prev.length === 0) {
+      previousDocumentsRef.current = documents
+      return
+    }
+
+    for (const doc of documents) {
+      const prevDoc = prev.find((d) => d.id === doc.id)
+      if (!prevDoc) continue
+
+      if (prevDoc.status !== 'ready' && doc.status === 'ready') {
+        toast.success(`"${doc.name}" is ready for chat`)
+      }
+      if (prevDoc.status !== 'failed' && doc.status === 'failed') {
+        toast.error(`"${doc.name}" failed to process`)
+      }
+    }
+
+    previousDocumentsRef.current = documents
+  }, [documents])
 
   // Poll for processing documents to update their status
   useEffect(() => {
@@ -70,6 +96,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           throw new Error(data.error ?? 'Upload failed')
         }
 
+        toast.success(`"${file.name}" uploaded successfully`)
+
         // Refresh list
         await fetchDocuments()
 
@@ -78,7 +106,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           router.push(`/chat/${data.id}`)
         }
       } catch (err) {
-        console.error('Upload error:', err)
+        const message = err instanceof Error ? err.message : 'Upload failed'
+        toast.error(message)
       } finally {
         setIsUploading(false)
       }
@@ -87,17 +116,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   )
 
   const handleDelete = useCallback(async (documentId: string) => {
-    const response = await fetch(`/api/documents/${documentId}`, {
-      method: 'DELETE',
-    })
+    try {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+      })
 
-    if (!response.ok) {
-      const data = (await response.json()) as { error?: string }
-      throw new Error(data.error ?? 'Delete failed')
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string }
+        throw new Error(data.error ?? 'Delete failed')
+      }
+
+      // Remove from local state immediately
+      setDocuments((prev) => prev.filter((d) => d.id !== documentId))
+      toast.success('Document deleted')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Delete failed'
+      toast.error(message)
     }
-
-    // Remove from local state immediately
-    setDocuments((prev) => prev.filter((d) => d.id !== documentId))
   }, [])
 
   return (
@@ -110,7 +145,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isUploading={isUploading}
         isLoading={isLoading}
       />
-      <main className="flex-1 overflow-hidden pt-12 md:pt-0">{children}</main>
+      <main className="flex-1 overflow-hidden pt-12 md:pt-0">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </main>
     </div>
   )
 }
