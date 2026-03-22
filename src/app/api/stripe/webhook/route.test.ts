@@ -30,19 +30,6 @@ function makeRequest(body: string, signature: string | null = 'sig_test') {
   })
 }
 
-function mockProfileQuery(profile: Record<string, unknown> | null) {
-  return {
-    select: () => ({
-      eq: () => ({
-        single: () => ({ data: profile, error: profile ? null : { message: 'not found' } }),
-      }),
-    }),
-    update: () => ({
-      eq: () => ({ data: null, error: null }),
-    }),
-  }
-}
-
 describe('POST /api/stripe/webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks()

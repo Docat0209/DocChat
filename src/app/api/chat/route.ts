@@ -99,7 +99,10 @@ export async function POST(request: Request) {
     const usage = await getUsageStatus(user.id)
     if (!usage.questions.canAsk) {
       return NextResponse.json(
-        { error: 'Daily question limit reached. Upgrade to Pro for unlimited questions.', code: 'QUESTION_LIMIT' },
+        {
+          error: 'Daily question limit reached. Upgrade to Pro for unlimited questions.',
+          code: 'QUESTION_LIMIT',
+        },
         { status: 403 },
       )
     }

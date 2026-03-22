@@ -13,9 +13,6 @@ export async function GET() {
     return NextResponse.json(usage)
   } catch (error) {
     console.error('Usage API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch usage status' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: 'Failed to fetch usage status' }, { status: 500 })
   }
 }

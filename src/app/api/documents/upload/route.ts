@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
     const usage = await getUsageStatus(user.id)
     if (!usage.documents.canUpload) {
       return NextResponse.json(
-        { error: 'Document limit reached. Upgrade to Pro for unlimited documents.', code: 'DOCUMENT_LIMIT' },
+        {
+          error: 'Document limit reached. Upgrade to Pro for unlimited documents.',
+          code: 'DOCUMENT_LIMIT',
+        },
         { status: 403 },
       )
     }

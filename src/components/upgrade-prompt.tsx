@@ -44,8 +44,8 @@ export function UpgradePrompt({ open, onOpenChange, message }: UpgradePromptProp
             Upgrade to Pro
           </DialogTitle>
           <DialogDescription>
-            {message ?? "You've reached your free tier limit."}
-            {' '}Upgrade to Pro for unlimited documents and questions.
+            {message ?? "You've reached your free tier limit."} Upgrade to Pro for unlimited
+            documents and questions.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -22,7 +22,7 @@ vi.mock('@/lib/supabase/admin', () => ({
       }
       if (table === 'documents') {
         return {
-          select: (_col: string, _opts: Record<string, unknown>) => ({
+          select: () => ({
             eq: () => mockDocumentCount(),
           }),
         }
@@ -50,7 +50,11 @@ describe('getUsageStatus', () => {
 
   it('free user with 2 docs can upload', async () => {
     mockProfileQuery.mockReturnValueOnce({
-      data: { plan: 'free', question_count_today: 5, question_count_reset_at: new Date().toISOString() },
+      data: {
+        plan: 'free',
+        question_count_today: 5,
+        question_count_reset_at: new Date().toISOString(),
+      },
       error: null,
     })
     mockDocumentCount.mockReturnValueOnce({ count: 2, error: null })
@@ -64,7 +68,11 @@ describe('getUsageStatus', () => {
 
   it('free user with 3 docs cannot upload', async () => {
     mockProfileQuery.mockReturnValueOnce({
-      data: { plan: 'free', question_count_today: 0, question_count_reset_at: new Date().toISOString() },
+      data: {
+        plan: 'free',
+        question_count_today: 0,
+        question_count_reset_at: new Date().toISOString(),
+      },
       error: null,
     })
     mockDocumentCount.mockReturnValueOnce({ count: 3, error: null })
@@ -77,7 +85,11 @@ describe('getUsageStatus', () => {
 
   it('free user with 19 questions can ask', async () => {
     mockProfileQuery.mockReturnValueOnce({
-      data: { plan: 'free', question_count_today: 19, question_count_reset_at: new Date().toISOString() },
+      data: {
+        plan: 'free',
+        question_count_today: 19,
+        question_count_reset_at: new Date().toISOString(),
+      },
       error: null,
     })
     mockDocumentCount.mockReturnValueOnce({ count: 0, error: null })
@@ -91,7 +103,11 @@ describe('getUsageStatus', () => {
 
   it('free user with 20 questions cannot ask', async () => {
     mockProfileQuery.mockReturnValueOnce({
-      data: { plan: 'free', question_count_today: 20, question_count_reset_at: new Date().toISOString() },
+      data: {
+        plan: 'free',
+        question_count_today: 20,
+        question_count_reset_at: new Date().toISOString(),
+      },
       error: null,
     })
     mockDocumentCount.mockReturnValueOnce({ count: 0, error: null })
@@ -104,7 +120,11 @@ describe('getUsageStatus', () => {
 
   it('pro user always has unlimited access', async () => {
     mockProfileQuery.mockReturnValueOnce({
-      data: { plan: 'pro', question_count_today: 999, question_count_reset_at: new Date().toISOString() },
+      data: {
+        plan: 'pro',
+        question_count_today: 999,
+        question_count_reset_at: new Date().toISOString(),
+      },
       error: null,
     })
     mockDocumentCount.mockReturnValueOnce({ count: 100, error: null })

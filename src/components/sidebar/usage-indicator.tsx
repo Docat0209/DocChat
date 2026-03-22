@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Crown, FileText, MessageSquare } from 'lucide-react'
 import type { UsageStatus } from '@/lib/usage/check-limits'
 
@@ -28,21 +28,24 @@ function formatLimit(current: number, limit: number): string {
 export function UsageIndicator() {
   const [usage, setUsage] = useState<UsageStatus | null>(null)
 
-  const fetchUsage = useCallback(async () => {
-    try {
-      const response = await fetch('/api/usage')
-      if (response.ok) {
-        const data = (await response.json()) as UsageStatus
-        setUsage(data)
+  useEffect(() => {
+    let cancelled = false
+    async function fetchUsage() {
+      try {
+        const response = await fetch('/api/usage')
+        if (response.ok && !cancelled) {
+          const data = (await response.json()) as UsageStatus
+          setUsage(data)
+        }
+      } catch {
+        // Silently fail — indicator is non-critical
       }
-    } catch {
-      // Silently fail — indicator is non-critical
+    }
+    fetchUsage()
+    return () => {
+      cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    fetchUsage()
-  }, [fetchUsage])
 
   if (!usage) return null
 
