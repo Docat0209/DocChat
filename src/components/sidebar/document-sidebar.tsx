@@ -380,7 +380,7 @@ function SidebarContent({
       </div>
 
       {/* Document list */}
-      <ScrollArea className="flex-1 px-2">
+      <ScrollArea className="min-h-0 flex-1 px-2">
         {isLoading ? (
           <div className="space-y-2 p-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -434,7 +434,7 @@ function SidebarContent({
       </ScrollArea>
 
       {/* Usage indicator + Upgrade / Manage subscription */}
-      <div className="border-t p-3 space-y-2">
+      <div className="shrink-0 border-t p-3 space-y-2">
         <UsageIndicator refreshTrigger={documents.length} />
         {plan && <UpgradeButton plan={plan} />}
       </div>

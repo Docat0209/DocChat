@@ -86,14 +86,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const {
-      messages,
-      documentId,
-      id: chatId,
-    } = body as {
+    const { messages, documentId, chatId } = body as {
       messages: UIMessage[]
       documentId: string | undefined
-      id: string | undefined
+      chatId: string | undefined
     }
 
     const usage = await getUsageStatus(user.id)

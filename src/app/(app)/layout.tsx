@@ -39,9 +39,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
+  // Re-fetch documents when pathname changes (e.g., after upload navigates to new doc)
   useEffect(() => {
     fetchDocuments()
+  }, [fetchDocuments, pathname])
 
+  useEffect(() => {
     async function fetchPlan() {
       const supabase = createClient()
       const {
@@ -58,7 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     }
     fetchPlan()
-  }, [fetchDocuments])
+  }, [])
 
   // Detect document status transitions and show toasts
   useEffect(() => {
