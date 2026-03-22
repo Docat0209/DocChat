@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   FileText,
   FileType2,
@@ -14,6 +14,8 @@ import {
   Trash2,
   Menu,
   Upload,
+  MessageSquare,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -39,6 +41,12 @@ import { LogoutButton } from '@/components/logout-button'
 import { formatRelativeDate } from '@/lib/format-relative-date'
 import { cn } from '@/lib/utils'
 import type { Document } from '@/types/database'
+
+interface ChatSummary {
+  id: string
+  title: string | null
+  created_at: string
+}
 
 interface DocumentSidebarProps {
   documents: Document[]
@@ -76,16 +84,14 @@ function getStatusIcon(status: Document['status']) {
   }
 }
 
-function DocumentListItem({
-  doc,
+function ChatListItem({
+  chat,
   isActive,
   onSelect,
-  onDeleteClick,
 }: {
-  doc: Document
+  chat: ChatSummary
   isActive: boolean
   onSelect: () => void
-  onDeleteClick: () => void
 }) {
   return (
     <div
@@ -99,47 +105,130 @@ function DocumentListItem({
         }
       }}
       className={cn(
-        'group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-        'hover:bg-accent/50 cursor-pointer',
-        isActive && 'bg-accent text-accent-foreground',
+        'flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors',
+        'hover:bg-accent/50 cursor-pointer ml-5',
+        isActive && 'bg-accent/70 text-accent-foreground',
       )}
       aria-current={isActive ? 'page' : undefined}
     >
-      {getFileIcon(doc.file_type)}
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{doc.name}</p>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {getStatusIcon(doc.status)}
-          <span>{formatRelativeDate(doc.created_at)}</span>
-        </div>
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Document options"
-            />
+      <MessageSquare className="size-3 shrink-0 text-muted-foreground" />
+      <span className="truncate">{chat.title ?? 'Untitled chat'}</span>
+      <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+        {formatRelativeDate(chat.created_at)}
+      </span>
+    </div>
+  )
+}
+
+function DocumentListItem({
+  doc,
+  isActive,
+  isExpanded,
+  onSelect,
+  onToggleExpand,
+  onDeleteClick,
+  chats,
+  currentChatId,
+  onChatSelect,
+}: {
+  doc: Document
+  isActive: boolean
+  isExpanded: boolean
+  onSelect: () => void
+  onToggleExpand: () => void
+  onDeleteClick: () => void
+  chats: ChatSummary[]
+  currentChatId: string | null
+  onChatSelect: (chatId: string) => void
+}) {
+  return (
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onSelect()
           }
-        >
-          <MoreVertical className="size-3.5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
+        }}
+        className={cn(
+          'group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+          'hover:bg-accent/50 cursor-pointer',
+          isActive && 'bg-accent text-accent-foreground',
+        )}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {chats.length > 0 && (
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation()
-              onDeleteClick()
+              onToggleExpand()
             }}
+            className="shrink-0 rounded p-0.5 hover:bg-accent"
+            aria-label={isExpanded ? 'Collapse chats' : 'Expand chats'}
           >
-            <Trash2 className="mr-2 size-3.5" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <ChevronRight
+              className={cn(
+                'size-3 text-muted-foreground transition-transform',
+                isExpanded && 'rotate-90',
+              )}
+            />
+          </button>
+        )}
+        {chats.length === 0 && <div className="w-4 shrink-0" />}
+        {getFileIcon(doc.file_type)}
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{doc.name}</p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {getStatusIcon(doc.status)}
+            <span>{formatRelativeDate(doc.created_at)}</span>
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Document options"
+              />
+            }
+          >
+            <MoreVertical className="size-3.5" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteClick()
+              }}
+            >
+              <Trash2 className="mr-2 size-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Chat list under document */}
+      {isExpanded && chats.length > 0 && (
+        <div className="space-y-0.5 py-1">
+          {chats.map((chat) => (
+            <ChatListItem
+              key={chat.id}
+              chat={chat}
+              isActive={currentChatId === chat.id}
+              onSelect={() => onChatSelect(chat.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -154,9 +243,47 @@ function SidebarContent({
   onNavigate,
 }: DocumentSidebarProps & { onNavigate?: () => void }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentChatId = searchParams.get('chat')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set())
+  const [chatsByDocument, setChatsByDocument] = useState<Record<string, ChatSummary[]>>({})
+
+  // Auto-expand the current document
+  useEffect(() => {
+    if (currentDocumentId) {
+      setExpandedDocs((prev) => {
+        if (prev.has(currentDocumentId)) return prev
+        const next = new Set(prev)
+        next.add(currentDocumentId)
+        return next
+      })
+    }
+  }, [currentDocumentId])
+
+  // Fetch chats for expanded documents
+  useEffect(() => {
+    for (const docId of expandedDocs) {
+      fetchChatsForDocument(docId)
+    }
+  }, [expandedDocs]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh chats when currentChatId changes (new chat created)
+  useEffect(() => {
+    if (currentDocumentId && currentChatId) {
+      fetchChatsForDocument(currentDocumentId)
+    }
+  }, [currentChatId, currentDocumentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchChatsForDocument = useCallback(async (documentId: string) => {
+    const response = await fetch(`/api/chats?documentId=${documentId}`)
+    if (response.ok) {
+      const chats = (await response.json()) as ChatSummary[]
+      setChatsByDocument((prev) => ({ ...prev, [documentId]: chats }))
+    }
+  }, [])
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,12 +304,31 @@ function SidebarContent({
     [router, onNavigate],
   )
 
+  const handleChatSelect = useCallback(
+    (documentId: string, chatId: string) => {
+      router.push(`/chat/${documentId}?chat=${chatId}`)
+      onNavigate?.()
+    },
+    [router, onNavigate],
+  )
+
+  const handleToggleExpand = useCallback((documentId: string) => {
+    setExpandedDocs((prev) => {
+      const next = new Set(prev)
+      if (next.has(documentId)) {
+        next.delete(documentId)
+      } else {
+        next.add(documentId)
+      }
+      return next
+    })
+  }, [])
+
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
       await onDelete(deleteTarget)
-      // If we deleted the current doc, go home
       if (deleteTarget === currentDocumentId) {
         router.push('/')
       }
@@ -270,8 +416,13 @@ function SidebarContent({
                 key={doc.id}
                 doc={doc}
                 isActive={doc.id === currentDocumentId}
+                isExpanded={expandedDocs.has(doc.id)}
                 onSelect={() => handleDocumentSelect(doc.id)}
+                onToggleExpand={() => handleToggleExpand(doc.id)}
                 onDeleteClick={() => setDeleteTarget(doc.id)}
+                chats={chatsByDocument[doc.id] ?? []}
+                currentChatId={currentChatId}
+                onChatSelect={(chatId) => handleChatSelect(doc.id, chatId)}
               />
             ))}
           </div>
@@ -315,7 +466,7 @@ export function DocumentSidebar(props: DocumentSidebarProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   return (
-    <>
+    <Suspense>
       {/* Desktop sidebar */}
       <aside className="hidden h-full w-[280px] shrink-0 border-r bg-background md:block">
         <SidebarContent {...props} />
@@ -336,6 +487,6 @@ export function DocumentSidebar(props: DocumentSidebarProps) {
         </Sheet>
         <span className="ml-2 text-lg font-semibold">DocChat</span>
       </div>
-    </>
+    </Suspense>
   )
 }

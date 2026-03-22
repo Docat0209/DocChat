@@ -4,6 +4,7 @@ import type { DocumentStatus } from '@/types/database'
 interface ChatHeaderProps {
   documentName: string
   documentStatus: DocumentStatus
+  children?: React.ReactNode
 }
 
 function StatusIndicator({ status }: { status: DocumentStatus }) {
@@ -33,7 +34,7 @@ function StatusIndicator({ status }: { status: DocumentStatus }) {
   }
 }
 
-export function ChatHeader({ documentName, documentStatus }: ChatHeaderProps) {
+export function ChatHeader({ documentName, documentStatus, children }: ChatHeaderProps) {
   return (
     <div className="flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <FileText className="size-4 shrink-0 text-muted-foreground" />
@@ -41,6 +42,7 @@ export function ChatHeader({ documentName, documentStatus }: ChatHeaderProps) {
         <h1 className="truncate text-sm font-medium text-foreground">{documentName}</h1>
       </div>
       <StatusIndicator status={documentStatus} />
+      {children}
     </div>
   )
 }
