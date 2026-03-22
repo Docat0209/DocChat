@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { UIMessage } from 'ai'
-import { Bot } from 'lucide-react'
+import { Bot, User } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { MessageContent } from '@/components/message-content'
 import { getMessageText } from '@/lib/get-message-text'
@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils'
 interface ChatMessageProps {
   message: UIMessage
   isStreaming?: boolean
+  userInitial?: string
 }
 
-export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) {
+export function ChatMessage({ message, isStreaming = false, userInitial }: ChatMessageProps) {
   const isUser = message.role === 'user'
   const text = useMemo(() => getMessageText(message), [message])
 
@@ -20,7 +21,13 @@ export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) 
       className={cn('flex gap-3', isUser ? 'flex-row-reverse' : 'flex-row')}
       data-testid={`message-${message.role}`}
     >
-      {!isUser && (
+      {isUser ? (
+        <Avatar size="sm" className="mt-0.5 shrink-0">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            {userInitial || <User className="size-3.5" />}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
         <Avatar size="sm" className="mt-0.5 shrink-0">
           <AvatarFallback>
             <Bot className="size-3.5" />

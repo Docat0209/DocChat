@@ -17,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [plan, setPlan] = useState<SubscriptionPlan | undefined>(undefined)
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined)
   const previousDocumentsRef = useRef<Document[]>([])
 
   // Extract current document ID from path
@@ -51,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) return
+      setUserEmail(user.email ?? undefined)
       const { data: profile } = await supabase
         .from('profiles')
         .select('plan')
@@ -173,6 +175,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isUploading={isUploading}
         isLoading={isLoading}
         plan={plan}
+        userEmail={userEmail}
       />
       <main className="flex-1 overflow-hidden pt-12 md:pt-0">
         <ErrorBoundary>{children}</ErrorBoundary>
