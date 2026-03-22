@@ -10,6 +10,21 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        // Fire and forget — don't block the redirect
+        fetch(`${origin}/api/email/welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: user.email,
+            name: user.user_metadata?.full_name,
+          }),
+        }).catch(() => {})
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

@@ -71,6 +71,12 @@ export default function SignupPage() {
       setError(authError.message)
     } else {
       setSuccess('Check your email for a confirmation link!')
+      // Fire and forget — don't block signup flow
+      fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).catch(() => {})
     }
 
     setLoading(false)
