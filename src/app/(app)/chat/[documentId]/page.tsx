@@ -3,8 +3,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Send } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -13,7 +12,6 @@ import { getMessageText } from '@/lib/get-message-text'
 
 export default function ChatPage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = use(params)
-  const router = useRouter()
   const bottomRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
 
@@ -49,14 +47,7 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
   )
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      <header className="flex items-center gap-3 border-b px-4 py-3">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/')} aria-label="Back">
-          <ArrowLeft className="size-4" />
-        </Button>
-        <h1 className="text-lg font-semibold">DocChat</h1>
-      </header>
-
+    <div className="flex h-full flex-col bg-background">
       <ScrollArea className="flex-1">
         <div className="mx-auto max-w-3xl space-y-4 p-4">
           {messages.length === 0 && !isLoading && (
