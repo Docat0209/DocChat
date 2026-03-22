@@ -5,6 +5,7 @@ import { processDocument } from '@/lib/pipeline/process-document'
 import { generateSuggestedQuestions } from '@/lib/pipeline/generate-questions'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { getUsageStatus } from '@/lib/usage/check-limits'
+import { apiError } from '@/lib/api-error'
 import type { DocumentInsert } from '@/types/database'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('Unauthorized', 'UNAUTHORIZED', 401)
     }
 
     const usage = await getUsageStatus(user.id)
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file exists
     if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+      return apiError('No file provided', 'NO_FILE', 400)
     }
 
     // Validate file size
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
-      return NextResponse.json({ error: 'Failed to upload file to storage' }, { status: 500 })
+      return apiError('Failed to upload file to storage', 'STORAGE_ERROR')
     }
 
     // Get public URL for the uploaded file
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
       console.error('Document insert error:', insertError)
       // Clean up uploaded file
       await supabase.storage.from('documents').remove([storagePath])
-      return NextResponse.json({ error: 'Failed to create document record' }, { status: 500 })
+      return apiError('Failed to create document record', 'INSERT_ERROR')
     }
 
     // Extract text from the file

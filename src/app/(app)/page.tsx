@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Upload, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -67,13 +68,16 @@ export default function HomePage() {
         }
 
         setStatus('processing')
+        toast.success('Document uploaded successfully')
 
         if (data.id) {
           router.push(`/chat/${data.id}`)
         }
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : 'Something went wrong')
+        const message = err instanceof Error ? err.message : 'Something went wrong'
+        setErrorMessage(message)
         setStatus('error')
+        toast.error(message)
       }
     },
     [router],
