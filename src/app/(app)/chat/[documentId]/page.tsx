@@ -221,7 +221,7 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
         <p className="text-sm text-muted-foreground">
           This document may have been deleted or you don&apos;t have access.
         </p>
-        <Button variant="outline" onClick={() => router.push('/')} className="mt-2">
+        <Button variant="outline" onClick={() => router.push('/dashboard')} className="mt-2">
           Go home
         </Button>
       </div>
@@ -268,7 +268,7 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
                   This document couldn&apos;t be processed. Try re-uploading it.
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+              <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')}>
                 Upload a new document
               </Button>
             </div>

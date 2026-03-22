@@ -334,7 +334,7 @@ function SidebarContent({
     try {
       await onDelete(deleteTarget)
       if (deleteTarget === currentDocumentId) {
-        router.push('/')
+        router.push('/dashboard')
       }
     } finally {
       setIsDeleting(false)
