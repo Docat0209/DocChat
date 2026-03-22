@@ -9,8 +9,10 @@ vi.mock('@/components/ui/avatar', () => ({
       {children}
     </div>
   ),
-  AvatarFallback: ({ children }: React.PropsWithChildren) => (
-    <div data-testid="avatar-fallback">{children}</div>
+  AvatarFallback: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+    <div data-testid="avatar-fallback" {...props}>
+      {children}
+    </div>
   ),
 }))
 
@@ -40,7 +42,7 @@ describe('ChatMessage', () => {
     expect(container).not.toHaveClass('flex-row-reverse')
   })
 
-  it('renders avatar for assistant messages only', () => {
+  it('renders avatar for both user and assistant messages', () => {
     const assistantMsg = createMessage({ role: 'assistant' })
     const { unmount } = render(<ChatMessage message={assistantMsg} />)
     expect(screen.getByTestId('avatar')).toBeInTheDocument()
@@ -48,7 +50,15 @@ describe('ChatMessage', () => {
 
     const userMsg = createMessage({ role: 'user' })
     render(<ChatMessage message={userMsg} />)
-    expect(screen.queryByTestId('avatar')).not.toBeInTheDocument()
+    expect(screen.getByTestId('avatar')).toBeInTheDocument()
+  })
+
+  it('renders user initial in avatar fallback', () => {
+    const message = createMessage({ role: 'user' })
+    render(<ChatMessage message={message} userInitial="J" />)
+
+    const fallback = screen.getByTestId('avatar-fallback')
+    expect(fallback).toHaveTextContent('J')
   })
 
   it('renders citation badges for assistant messages with [Page X]', () => {
