@@ -12,12 +12,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChatMessage } from '@/components/chat/chat-message'
 import { ChatHeader } from '@/components/chat/chat-header'
 import { TypingIndicator } from '@/components/chat/typing-indicator'
+import { SuggestedQuestions } from '@/components/chat/suggested-questions'
 import { createClient } from '@/lib/supabase/client'
 import type { DocumentStatus, Message } from '@/types/database'
 
 interface DocumentInfo {
   name: string
   status: DocumentStatus
+  suggestedQuestions: string[]
 }
 
 function messagesToUIMessages(messages: Message[]): UIMessage[] {
@@ -46,11 +48,19 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
       const supabase = createClient()
       const { data } = await supabase
         .from('documents')
-        .select('name, status')
+        .select('name, status, suggested_questions')
         .eq('id', documentId)
         .single()
       if (data) {
-        setDocumentInfo({ name: data.name, status: data.status as DocumentStatus })
+        const raw = data.suggested_questions
+        const suggestedQuestions = Array.isArray(raw)
+          ? raw.filter((q): q is string => typeof q === 'string')
+          : []
+        setDocumentInfo({
+          name: data.name,
+          status: data.status as DocumentStatus,
+          suggestedQuestions,
+        })
       }
     }
     fetchDocument()
@@ -143,6 +153,15 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
     [handleSend],
   )
 
+  const handleSelectQuestion = useCallback(
+    (question: string) => {
+      if (isLoading) return
+      setInput('')
+      sendMessage({ text: question })
+    },
+    [isLoading, sendMessage],
+  )
+
   const handleNewChat = useCallback(() => {
     router.push(`/chat/${documentId}`)
   }, [router, documentId])
@@ -188,18 +207,26 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
           )}
 
           {!isProcessing && !isLoadingHistory && messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-                <MessageSquare className="size-6 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+                  <MessageSquare className="size-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Ask a question about your document
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Your answers will include page references.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Ask a question about your document
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Your answers will include page references.
-                </p>
-              </div>
+              {documentInfo?.suggestedQuestions && documentInfo.suggestedQuestions.length > 0 && (
+                <SuggestedQuestions
+                  questions={documentInfo.suggestedQuestions}
+                  onSelect={handleSelectQuestion}
+                />
+              )}
             </div>
           )}
 
