@@ -1,0 +1,214 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+const mockGetUser = vi.fn()
+const mockGetUsageStatus = vi.fn()
+const mockIncrementQuestionCount = vi.fn()
+const mockRetrieveChunks = vi.fn()
+
+const mockInsertResult = vi.fn()
+const mockSelectSingleResult = vi.fn()
+const mockInsertSelectSingleResult = vi.fn()
+
+vi.mock('@/lib/auth/get-user', () => ({
+  getAuthenticatedUser: () => mockGetUser(),
+}))
+
+vi.mock('@/lib/usage/check-limits', () => ({
+  getUsageStatus: (...args: unknown[]) => mockGetUsageStatus(...args),
+  incrementQuestionCount: (...args: unknown[]) => mockIncrementQuestionCount(...args),
+}))
+
+vi.mock('@/lib/rag/retrieve', () => ({
+  retrieveChunks: (...args: unknown[]) => mockRetrieveChunks(...args),
+}))
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: () => ({
+    from: (table: string) => {
+      if (table === 'documents') {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: () => mockSelectSingleResult(),
+            }),
+          }),
+        }
+      }
+      if (table === 'chats') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                single: () => mockSelectSingleResult(),
+              }),
+            }),
+          }),
+          insert: () => ({
+            select: () => ({
+              single: () => mockInsertSelectSingleResult(),
+            }),
+          }),
+        }
+      }
+      if (table === 'messages') {
+        return {
+          insert: () => mockInsertResult(),
+        }
+      }
+      return {}
+    },
+  }),
+}))
+
+const mockStreamResult = {
+  toUIMessageStreamResponse: vi.fn(() => new Response('streaming', { status: 200 })),
+}
+
+vi.mock('ai', () => ({
+  streamText: vi.fn(() => mockStreamResult),
+  convertToModelMessages: vi.fn(async () => []),
+}))
+
+vi.mock('@ai-sdk/openai', () => ({
+  openai: vi.fn(() => 'mock-model'),
+}))
+
+const { POST } = await import('./route')
+
+function makeRequest(body: Record<string, unknown>) {
+  return new Request('http://localhost/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+function makeValidBody(overrides: Record<string, unknown> = {}) {
+  return {
+    messages: [
+      {
+        id: 'msg-1',
+        role: 'user',
+        content: 'What is this document about?',
+        parts: [{ type: 'text', text: 'What is this document about?' }],
+        createdAt: new Date().toISOString(),
+      },
+    ],
+    documentId: 'doc-123',
+    ...overrides,
+  }
+}
+
+const defaultUsage = {
+  plan: 'free',
+  documents: { current: 1, limit: 3, canUpload: true },
+  questions: { current: 0, limit: 20, canAsk: true },
+}
+
+describe('POST /api/chat', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetUser.mockResolvedValue({ id: 'user-1' })
+    mockGetUsageStatus.mockResolvedValue(defaultUsage)
+    mockRetrieveChunks.mockResolvedValue([{ pageNumber: 1, content: 'Sample chunk content' }])
+    mockInsertResult.mockResolvedValue({ error: null })
+    mockIncrementQuestionCount.mockResolvedValue(undefined)
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    mockGetUser.mockResolvedValueOnce(null)
+    const response = await POST(makeRequest(makeValidBody()))
+    expect(response.status).toBe(401)
+    const body = await response.json()
+    expect(body.code).toBe('UNAUTHORIZED')
+  })
+
+  it('returns 400 when documentId is missing', async () => {
+    const response = await POST(makeRequest(makeValidBody({ documentId: undefined })))
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.code).toBe('MISSING_DOCUMENT_ID')
+  })
+
+  it('creates a new chat when no chatId is provided', async () => {
+    // Document exists and is ready
+    mockSelectSingleResult.mockResolvedValueOnce({
+      data: { id: 'doc-123', status: 'ready', user_id: 'user-1' },
+      error: null,
+    })
+    // Chat insert succeeds
+    mockInsertSelectSingleResult.mockResolvedValueOnce({
+      data: { id: 'new-chat-id' },
+      error: null,
+    })
+
+    const response = await POST(makeRequest(makeValidBody()))
+    expect(response.status).toBe(200)
+    expect(mockStreamResult.toUIMessageStreamResponse).toHaveBeenCalledWith({
+      headers: { 'x-chat-id': 'new-chat-id' },
+    })
+  })
+
+  it('creates a new chat even when useChat auto-generated id is in the body', async () => {
+    // The key fix: the backend reads `chatId` (not `id`) from the request body.
+    // useChat sends an `id` field automatically, but we ignore it.
+    // If `chatId` is not set, a new chat should be created — not a lookup of the `id` field.
+    mockSelectSingleResult.mockResolvedValueOnce({
+      data: { id: 'doc-123', status: 'ready', user_id: 'user-1' },
+      error: null,
+    })
+    mockInsertSelectSingleResult.mockResolvedValueOnce({
+      data: { id: 'created-chat-id' },
+      error: null,
+    })
+
+    // Send body with `id` (auto-generated by useChat) but no `chatId`
+    const body = makeValidBody({ id: 'useChat-random-uuid-12345' })
+    const response = await POST(makeRequest(body))
+
+    expect(response.status).toBe(200)
+    // Should create a new chat, not try to look up the auto-generated id
+    expect(mockStreamResult.toUIMessageStreamResponse).toHaveBeenCalledWith({
+      headers: { 'x-chat-id': 'created-chat-id' },
+    })
+  })
+
+  it('uses existing chat when chatId is provided', async () => {
+    // Document exists and is ready
+    mockSelectSingleResult
+      .mockResolvedValueOnce({
+        data: { id: 'doc-123', status: 'ready', user_id: 'user-1' },
+        error: null,
+      })
+      // Chat lookup succeeds
+      .mockResolvedValueOnce({
+        data: { id: 'existing-chat-id' },
+        error: null,
+      })
+
+    const response = await POST(makeRequest(makeValidBody({ chatId: 'existing-chat-id' })))
+    expect(response.status).toBe(200)
+    expect(mockStreamResult.toUIMessageStreamResponse).toHaveBeenCalledWith({
+      headers: { 'x-chat-id': 'existing-chat-id' },
+    })
+  })
+
+  it('returns 403 when question limit is reached', async () => {
+    mockGetUsageStatus.mockResolvedValueOnce({
+      ...defaultUsage,
+      questions: { current: 20, limit: 20, canAsk: false },
+    })
+
+    const response = await POST(makeRequest(makeValidBody()))
+    expect(response.status).toBe(403)
+    const body = await response.json()
+    expect(body.code).toBe('QUESTION_LIMIT')
+  })
+
+  it('returns 400 when messages array is empty', async () => {
+    const response = await POST(makeRequest(makeValidBody({ messages: [] })))
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.code).toBe('EMPTY_MESSAGES')
+  })
+})
