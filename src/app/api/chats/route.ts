@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('Unauthorized', 'UNAUTHORIZED', 401)
     }
 
     const documentId = request.nextUrl.searchParams.get('documentId')
     if (!documentId) {
-      return NextResponse.json({ error: 'documentId is required' }, { status: 400 })
+      return apiError('documentId is required', 'MISSING_PARAM', 400)
     }
 
     const supabase = await createClient()
@@ -23,11 +24,11 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError(error.message, 'DB_ERROR', 500)
     }
 
     return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
 }

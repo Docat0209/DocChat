@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
+import { apiError } from '@/lib/api-error'
 
 export async function DELETE(
   _request: NextRequest,
@@ -9,7 +10,7 @@ export async function DELETE(
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('Unauthorized', 'UNAUTHORIZED', 401)
     }
 
     const { documentId } = await params
@@ -23,11 +24,11 @@ export async function DELETE(
       .single()
 
     if (fetchError || !document) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+      return apiError('Document not found', 'NOT_FOUND', 404)
     }
 
     if (document.user_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return apiError('Forbidden', 'FORBIDDEN', 403)
     }
 
     // Delete from storage
@@ -39,18 +40,12 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Document delete error:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 })
+      return apiError('Failed to delete document', 'DELETE_ERROR', 500)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete handler error:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    )
+    return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
 }

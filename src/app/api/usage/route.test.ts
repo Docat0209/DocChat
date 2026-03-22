@@ -26,6 +26,7 @@ describe('GET /api/usage', () => {
     expect(response.status).toBe(401)
     const body = await response.json()
     expect(body.error).toBe('Unauthorized')
+    expect(body.code).toBe('UNAUTHORIZED')
   })
 
   it('returns usage status for authenticated user', async () => {
@@ -55,5 +56,6 @@ describe('GET /api/usage', () => {
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body.error).toBe('Failed to fetch usage status')
+    expect(body.code).toBe('USAGE_ERROR')
   })
 })
