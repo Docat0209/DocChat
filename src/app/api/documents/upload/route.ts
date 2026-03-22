@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractText } from '@/lib/extraction/extract-text'
+import { processDocument } from '@/lib/pipeline/process-document'
 import type { DocumentInsert } from '@/types/database'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
@@ -114,16 +115,9 @@ export async function POST(request: NextRequest) {
     let extractionResult
     try {
       extractionResult = await extractText(buffer, mimeType || `text/${ext}`)
-
-      // Update status to "ready"
-      await supabase
-        .from('documents')
-        .update({ status: 'ready' as const })
-        .eq('id', documentId)
     } catch (extractionError) {
       console.error('Extraction error:', extractionError)
 
-      // Update status to "failed"
       await supabase
         .from('documents')
         .update({ status: 'failed' as const })
@@ -136,6 +130,36 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 },
       )
+    }
+
+    // Chunk text and generate embeddings
+    try {
+      await processDocument({
+        documentId,
+        pages: extractionResult.pages,
+      })
+
+      await supabase
+        .from('documents')
+        .update({ status: 'ready' as const })
+        .eq('id', documentId)
+    } catch (pipelineError) {
+      console.error('Pipeline error:', pipelineError)
+
+      await supabase
+        .from('documents')
+        .update({ status: 'failed' as const })
+        .eq('id', documentId)
+
+      // Return document info even though processing failed — upload itself succeeded
+      return NextResponse.json({
+        id: documentId,
+        name: file.name,
+        fileType,
+        status: 'failed',
+        error: 'Failed to process document for chat',
+        details: pipelineError instanceof Error ? pipelineError.message : 'Unknown error',
+      })
     }
 
     return NextResponse.json({
