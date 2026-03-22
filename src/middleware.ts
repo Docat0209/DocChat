@@ -39,7 +39,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Unauthenticated users on protected routes → redirect to /login
-  if (!user && !PUBLIC_ROUTES.includes(pathname) && !pathname.startsWith('/auth/')) {
+  // Skip API routes — they handle their own auth and return 401
+  if (
+    !user &&
+    !PUBLIC_ROUTES.includes(pathname) &&
+    !pathname.startsWith('/auth/') &&
+    !pathname.startsWith('/api/')
+  ) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
