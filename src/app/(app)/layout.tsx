@@ -6,7 +6,9 @@ import { toast } from 'sonner'
 import { DocumentSidebar } from '@/components/sidebar/document-sidebar'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { createClient } from '@/lib/supabase/client'
-import type { Document } from '@/types/database'
+import type { Document, SubscriptionPlan } from '@/types/database'
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -14,6 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [documents, setDocuments] = useState<Document[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [plan, setPlan] = useState<SubscriptionPlan | undefined>(undefined)
   const previousDocumentsRef = useRef<Document[]>([])
 
   // Extract current document ID from path
@@ -38,6 +41,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchDocuments()
+
+    async function fetchPlan() {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', user.id)
+        .single()
+      if (profile) {
+        setPlan(profile.plan as SubscriptionPlan)
+      }
+    }
+    fetchPlan()
   }, [fetchDocuments])
 
   // Detect document status transitions and show toasts
@@ -76,6 +96,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleUpload = useCallback(
     async (file: File) => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error('File too large. Maximum size is 20MB.')
+        return
+      }
+
       setIsUploading(true)
       try {
         const formData = new FormData()
@@ -144,6 +169,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         onDelete={handleDelete}
         isUploading={isUploading}
         isLoading={isLoading}
+        plan={plan}
       />
       <main className="flex-1 overflow-hidden pt-12 md:pt-0">
         <ErrorBoundary>{children}</ErrorBoundary>

@@ -38,6 +38,7 @@ describe('GET /api/chats', () => {
     expect(response.status).toBe(401)
     const body = await response.json()
     expect(body.error).toBe('Unauthorized')
+    expect(body.code).toBe('UNAUTHORIZED')
   })
 
   it('returns 400 when documentId is missing', async () => {
@@ -49,6 +50,7 @@ describe('GET /api/chats', () => {
     expect(response.status).toBe(400)
     const body = await response.json()
     expect(body.error).toBe('documentId is required')
+    expect(body.code).toBe('MISSING_PARAM')
   })
 
   it('returns chats for a document', async () => {
@@ -80,5 +82,6 @@ describe('GET /api/chats', () => {
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body.error).toBe('DB error')
+    expect(body.code).toBe('DB_ERROR')
   })
 })

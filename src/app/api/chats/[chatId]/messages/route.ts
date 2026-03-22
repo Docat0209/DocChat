@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { createClient } from '@/lib/supabase/server'
+import { apiError } from '@/lib/api-error'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ chatId: string }> }) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return apiError('Unauthorized', 'UNAUTHORIZED', 401)
     }
 
     const { chatId } = await params
@@ -22,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cha
       .single()
 
     if (chatError || !chat) {
-      return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
+      return apiError('Chat not found', 'NOT_FOUND', 404)
     }
 
     const { data, error } = await supabase
@@ -32,11 +33,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cha
       .order('created_at', { ascending: true })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return apiError(error.message, 'DB_ERROR', 500)
     }
 
     return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
 }

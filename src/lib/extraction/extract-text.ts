@@ -1,4 +1,4 @@
-import { PDFParse } from 'pdf-parse'
+import { extractText as extractPdfText, getDocumentProxy } from 'unpdf'
 import mammoth from 'mammoth'
 
 export interface ExtractedPage {
@@ -15,27 +15,22 @@ export interface ExtractionResult {
 const DOCX_CHUNK_SIZE = 3000
 
 async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
-  const parser = new PDFParse({ data: new Uint8Array(buffer) })
+  const pdf = await getDocumentProxy(new Uint8Array(buffer))
+  const { text } = await extractPdfText(pdf, { mergePages: false })
 
-  try {
-    const textResult = await parser.getText()
+  const pages: ExtractedPage[] = (text as string[])
+    .map((content, index) => ({
+      pageNumber: index + 1,
+      content: content.trim(),
+    }))
+    .filter((page) => page.content.length > 0)
 
-    const pages: ExtractedPage[] = textResult.pages
-      .map((page) => ({
-        pageNumber: page.num,
-        content: page.text.trim(),
-      }))
-      .filter((page) => page.content.length > 0)
+  const totalCharacters = pages.reduce((sum, page) => sum + page.content.length, 0)
 
-    const totalCharacters = pages.reduce((sum, page) => sum + page.content.length, 0)
-
-    return {
-      pages,
-      totalPages: pages.length,
-      totalCharacters,
-    }
-  } finally {
-    await parser.destroy()
+  return {
+    pages,
+    totalPages: pages.length,
+    totalCharacters,
   }
 }
 

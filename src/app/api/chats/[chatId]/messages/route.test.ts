@@ -59,6 +59,7 @@ describe('GET /api/chats/[chatId]/messages', () => {
     expect(response.status).toBe(401)
     const body = await response.json()
     expect(body.error).toBe('Unauthorized')
+    expect(body.code).toBe('UNAUTHORIZED')
   })
 
   it('returns 404 when chat does not belong to user', async () => {
@@ -70,6 +71,7 @@ describe('GET /api/chats/[chatId]/messages', () => {
     expect(response.status).toBe(404)
     const body = await response.json()
     expect(body.error).toBe('Chat not found')
+    expect(body.code).toBe('NOT_FOUND')
   })
 
   it('returns messages for a chat', async () => {
@@ -115,5 +117,6 @@ describe('GET /api/chats/[chatId]/messages', () => {
     expect(response.status).toBe(500)
     const body = await response.json()
     expect(body.error).toBe('DB error')
+    expect(body.code).toBe('DB_ERROR')
   })
 })
