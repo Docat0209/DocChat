@@ -4,6 +4,7 @@ import { streamText, convertToModelMessages, type UIMessage } from 'ai'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { retrieveChunks, type RetrievedChunk } from '@/lib/rag/retrieve'
+import { getUsageStatus, incrementQuestionCount } from '@/lib/usage/check-limits'
 
 function buildSystemPrompt(context: string): string {
   return `You are a helpful document assistant. Answer questions based ONLY on the provided context.
@@ -95,6 +96,17 @@ export async function POST(request: Request) {
       id: string | undefined
     }
 
+    const usage = await getUsageStatus(user.id)
+    if (!usage.questions.canAsk) {
+      return NextResponse.json(
+        {
+          error: 'Daily question limit reached. Upgrade to Pro for unlimited questions.',
+          code: 'QUESTION_LIMIT',
+        },
+        { status: 403 },
+      )
+    }
+
     if (!documentId) {
       return NextResponse.json({ error: 'documentId is required' }, { status: 400 })
     }
@@ -163,6 +175,7 @@ export async function POST(request: Request) {
           content: text,
           sources: buildSources(chunks),
         })
+        await incrementQuestionCount(user.id)
       },
     })
 

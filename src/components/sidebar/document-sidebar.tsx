@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LogoutButton } from '@/components/logout-button'
 import { UpgradeButton } from '@/components/upgrade-button'
+import { UsageIndicator } from '@/components/sidebar/usage-indicator'
 import { formatRelativeDate } from '@/lib/format-relative-date'
 import { cn } from '@/lib/utils'
 import type { Document, SubscriptionPlan } from '@/types/database'
@@ -432,12 +433,11 @@ function SidebarContent({
         )}
       </ScrollArea>
 
-      {/* Upgrade / Manage subscription */}
-      {plan && (
-        <div className="border-t p-3">
-          <UpgradeButton plan={plan} />
-        </div>
-      )}
+      {/* Usage indicator + Upgrade / Manage subscription */}
+      <div className="border-t p-3 space-y-2">
+        <UsageIndicator />
+        {plan && <UpgradeButton plan={plan} />}
+      </div>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
