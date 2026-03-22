@@ -1,0 +1,5 @@
+This is the first paragraph of the sample document. It contains some introductory text that would typically appear at the beginning of a document.
+
+This is the second paragraph. It provides additional details and information about the topic being discussed in the document.
+
+This is the third paragraph. It wraps up the sample content and serves as a conclusion to the test fixture.
