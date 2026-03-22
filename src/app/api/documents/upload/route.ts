@@ -130,10 +130,19 @@ export async function POST(request: NextRequest) {
       return apiError('Failed to create document record', 'INSERT_ERROR')
     }
 
+    // Resolve the effective MIME type for extraction
+    const effectiveMimeType = ALLOWED_MIME_TYPES[mimeType]
+      ? mimeType
+      : ext === 'pdf'
+        ? 'application/pdf'
+        : ext === 'docx'
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : 'text/plain'
+
     // Extract text from the file
     let extractionResult
     try {
-      extractionResult = await extractText(buffer, mimeType || `text/${ext}`)
+      extractionResult = await extractText(buffer, effectiveMimeType)
     } catch (extractionError) {
       console.error('Extraction error:', extractionError)
 
@@ -142,12 +151,10 @@ export async function POST(request: NextRequest) {
         .update({ status: 'failed' as const })
         .eq('id', documentId)
 
-      return NextResponse.json(
-        {
-          error: 'Failed to extract text from document',
-          details: extractionError instanceof Error ? extractionError.message : 'Unknown error',
-        },
-        { status: 500 },
+      const detail = extractionError instanceof Error ? extractionError.message : 'Unknown error'
+      return apiError(
+        `Failed to extract text from ${fileType.toUpperCase()} file: ${detail}`,
+        'EXTRACTION_ERROR',
       )
     }
 
@@ -188,14 +195,19 @@ export async function POST(request: NextRequest) {
         .update({ status: 'failed' as const })
         .eq('id', documentId)
 
-      // Return document info even though processing failed — upload itself succeeded
+      const detail = pipelineError instanceof Error ? pipelineError.message : 'Unknown error'
+      const pipelineStep = detail.includes('chunks')
+        ? 'Failed to store document chunks'
+        : detail.includes('embedding') || detail.includes('openai')
+          ? 'Failed to generate embeddings'
+          : 'Failed to process document for chat'
+
       return NextResponse.json({
         id: documentId,
         name: file.name,
         fileType,
         status: 'failed',
-        error: 'Failed to process document for chat',
-        details: pipelineError instanceof Error ? pipelineError.message : 'Unknown error',
+        error: `${pipelineStep}: ${detail}`,
       })
     }
 
@@ -208,12 +220,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Upload handler error:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 },
-    )
+    const detail = error instanceof Error ? error.message : 'Unknown error'
+    return apiError(`Upload failed: ${detail}`, 'UPLOAD_ERROR')
   }
 }

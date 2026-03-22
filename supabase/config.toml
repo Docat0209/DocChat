@@ -1,0 +1,10 @@
+[api]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "https://doc-chat-gamma.vercel.app"
+additional_redirect_urls = ["https://doc-chat-gamma.vercel.app/**", "https://*.vercel.app/**", "http://localhost:3000/**"]
+
+[auth.email]
+enable_confirmations = false
