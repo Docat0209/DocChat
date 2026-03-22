@@ -221,13 +221,12 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
                   </p>
                 </div>
               </div>
-              {documentInfo?.suggestedQuestions &&
-                documentInfo.suggestedQuestions.length > 0 && (
-                  <SuggestedQuestions
-                    questions={documentInfo.suggestedQuestions}
-                    onSelect={handleSelectQuestion}
-                  />
-                )}
+              {documentInfo?.suggestedQuestions && documentInfo.suggestedQuestions.length > 0 && (
+                <SuggestedQuestions
+                  questions={documentInfo.suggestedQuestions}
+                  onSelect={handleSelectQuestion}
+                />
+              )}
             </div>
           )}
 
