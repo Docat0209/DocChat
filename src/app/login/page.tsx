@@ -1,7 +1,7 @@
 'use client'
 
 import { type FormEvent, Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -35,7 +35,6 @@ function GoogleIcon() {
 }
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [email, setEmail] = useState('')
@@ -60,8 +59,7 @@ function LoginForm() {
       setError(authError.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     }
   }
 
@@ -76,8 +74,13 @@ function LoginForm() {
     })
 
     if (oauthError) {
-      if (oauthError.message.toLowerCase().includes('provider')) {
-        setError('Google OAuth is not configured yet. Please use email/password to sign in.')
+      const msg = oauthError.message?.toLowerCase() ?? ''
+      if (
+        msg.includes('provider') ||
+        ('error_code' in oauthError &&
+          (oauthError as Record<string, unknown>).error_code === 'validation_failed')
+      ) {
+        setError('Google sign-in is not available yet. Please use email and password.')
       } else {
         setError(oauthError.message)
       }
