@@ -3,23 +3,13 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { extractText } from './extract-text'
 
-vi.mock('pdf-parse', () => {
-  class MockPDFParse {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    constructor(_opts: { data: Uint8Array }) {}
-    async getText() {
-      return {
-        pages: [
-          { num: 1, text: 'Page one content' },
-          { num: 2, text: 'Page two content' },
-          { num: 3, text: '' },
-        ],
-      }
-    }
-    async destroy() {}
-  }
-  return { PDFParse: MockPDFParse }
-})
+vi.mock('unpdf', () => ({
+  getDocumentProxy: vi.fn(async () => ({})),
+  extractText: vi.fn(async () => ({
+    totalPages: 3,
+    text: ['Page one content', 'Page two content', ''],
+  })),
+}))
 
 vi.mock('mammoth', () => ({
   default: {
@@ -75,7 +65,7 @@ describe('extractText', () => {
   })
 
   describe('PDF extraction', () => {
-    it('returns pages from pdf-parse and filters empty pages', async () => {
+    it('returns pages from unpdf and filters empty pages', async () => {
       const buffer = Buffer.from('fake pdf content')
       const result = await extractText(buffer, 'application/pdf')
 
