@@ -1,5 +1,14 @@
-This is the first paragraph of the sample document. It contains content about the first paragraph topic.
+DocChat Sample Document
 
-This is the second paragraph. It covers a different subject and provides additional details for testing.
+This document describes the DocChat application, which allows users to upload documents and ask questions about their content using AI.
 
-This is the third paragraph. It wraps up the sample text file used for extraction testing.
+Key Features:
+- Document upload supporting PDF, DOCX, and TXT formats
+- AI-powered question answering with source citations
+- Chat history that persists across sessions
+- Free tier with 3 documents and 20 questions per day
+- Pro tier at $9/month with unlimited documents and questions
+
+The application uses Next.js for the frontend, Supabase for authentication and storage, and OpenAI for natural language processing.
+
+Users can drag and drop files or click to upload. Once a document is processed, they can ask questions in a conversational interface. The AI will respond with relevant information extracted from the document, including citations pointing to the specific sections used.
