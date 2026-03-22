@@ -7,9 +7,7 @@ test.describe('Landing Page', () => {
 
   test('renders hero section', async ({ page }) => {
     await page.goto('/')
-    await expect(
-      page.getByRole('heading', { name: /chat with your documents/i })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: /chat with your documents/i })).toBeVisible()
   })
 
   test('renders feature cards', async ({ page }) => {

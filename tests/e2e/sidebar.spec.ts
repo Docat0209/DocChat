@@ -4,9 +4,7 @@ test.describe('Sidebar', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login')
     await page.getByRole('textbox', { name: /email/i }).fill('test@docchat.dev')
-    await page
-      .getByRole('textbox', { name: /password/i })
-      .fill('TestPass123!')
+    await page.getByRole('textbox', { name: /password/i }).fill('TestPass123!')
     await page.getByRole('button', { name: /sign in/i }).click()
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
   })
@@ -17,9 +15,7 @@ test.describe('Sidebar', () => {
   })
 
   test('shows upgrade button for free users', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /upgrade to pro/i })
-    ).toBeVisible()
+    await expect(page.getByRole('button', { name: /upgrade to pro/i })).toBeVisible()
   })
 
   test('mobile: sidebar hidden, hamburger visible', async ({ page }) => {
