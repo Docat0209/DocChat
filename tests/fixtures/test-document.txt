@@ -1,0 +1,39 @@
+DocChat Test Document - Software Engineering Best Practices
+
+Section 1: Code Quality
+
+Writing clean, maintainable code is essential for long-term project success. Key principles include:
+
+- Single Responsibility Principle: Each function or class should have one clear purpose
+- DRY (Don't Repeat Yourself): Avoid duplicating code by extracting common logic into reusable functions
+- KISS (Keep It Simple, Stupid): Prefer simple solutions over complex ones
+- Code Reviews: Regular peer reviews catch bugs early and spread knowledge across the team
+
+Section 2: Testing Strategies
+
+A comprehensive testing strategy includes multiple layers:
+
+Unit tests verify individual functions and components in isolation. They should be fast, deterministic, and cover edge cases. Mock external dependencies to keep unit tests focused.
+
+Integration tests verify that components work together correctly. They test real database queries, API calls, and service interactions. Integration tests are slower but catch bugs that unit tests miss.
+
+End-to-end tests simulate real user interactions in a browser. They verify complete user flows like signup, login, file upload, and chat. E2E tests are the most valuable but also the slowest.
+
+Section 3: Continuous Integration
+
+CI/CD pipelines automate the build, test, and deployment process:
+
+- Every pull request triggers automated tests
+- Code must pass linting, type checking, and all tests before merging
+- Automated deployments reduce human error and speed up releases
+- Branch protection rules prevent merging broken code into main branches
+
+Section 4: Version Control Best Practices
+
+Effective use of version control improves team collaboration:
+
+- Write clear, descriptive commit messages using conventional commits format
+- Keep commits atomic - each commit should represent one logical change
+- Use feature branches for all new work
+- Review your own code before requesting peer review
+- Delete merged branches to keep the repository clean

@@ -92,9 +92,9 @@ export default function ChatPage({ params }: { params: Promise<{ documentId: str
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        body: { documentId },
+        body: { documentId, chatId },
       }),
-    [documentId],
+    [documentId, chatId],
   )
 
   const { messages, sendMessage, status, error, setMessages } = useChat({

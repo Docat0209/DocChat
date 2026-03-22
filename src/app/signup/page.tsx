@@ -85,12 +85,20 @@ export default function SignupPage() {
   async function handleGoogleLogin() {
     setError('')
     const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
+
+    if (oauthError) {
+      if (oauthError.message.toLowerCase().includes('provider')) {
+        setError('Google OAuth is not configured yet. Please use email/password to sign up.')
+      } else {
+        setError(oauthError.message)
+      }
+    }
   }
 
   return (
