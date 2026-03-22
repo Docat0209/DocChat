@@ -38,9 +38,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { LogoutButton } from '@/components/logout-button'
+import { UpgradeButton } from '@/components/upgrade-button'
 import { formatRelativeDate } from '@/lib/format-relative-date'
 import { cn } from '@/lib/utils'
-import type { Document } from '@/types/database'
+import type { Document, SubscriptionPlan } from '@/types/database'
 
 interface ChatSummary {
   id: string
@@ -55,6 +56,7 @@ interface DocumentSidebarProps {
   onDelete: (documentId: string) => Promise<void>
   isUploading: boolean
   isLoading: boolean
+  plan?: SubscriptionPlan
 }
 
 const ACCEPTED_EXTENSIONS = '.pdf,.docx,.txt'
@@ -240,6 +242,7 @@ function SidebarContent({
   onDelete,
   isUploading,
   isLoading,
+  plan,
   onNavigate,
 }: DocumentSidebarProps & { onNavigate?: () => void }) {
   const router = useRouter()
@@ -428,6 +431,13 @@ function SidebarContent({
           </div>
         )}
       </ScrollArea>
+
+      {/* Upgrade / Manage subscription */}
+      {plan && (
+        <div className="border-t p-3">
+          <UpgradeButton plan={plan} />
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
