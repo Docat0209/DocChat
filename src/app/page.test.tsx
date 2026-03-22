@@ -59,7 +59,7 @@ describe('LandingPage', () => {
     render(<LandingPage />)
 
     const githubLink = screen.getByRole('link', { name: /github/i })
-    expect(githubLink).toHaveAttribute('href', 'https://github.com')
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/Docat0209/DocChat')
     expect(githubLink).toHaveAttribute('target', '_blank')
   })
 })
