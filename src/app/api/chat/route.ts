@@ -54,7 +54,11 @@ async function getOrCreateChat(
     return chatId
   }
 
-  const title = firstMessageContent.slice(0, 100) + (firstMessageContent.length > 100 ? '...' : '')
+  const trimmed = firstMessageContent.trim()
+  const title =
+    trimmed.length < 3
+      ? `Chat ${new Date().toLocaleDateString()}`
+      : trimmed.slice(0, 50) + (trimmed.length > 50 ? '...' : '')
 
   const { data, error } = await adminClient
     .from('chats')
