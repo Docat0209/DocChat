@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractText } from '@/lib/extraction/extract-text'
 import { processDocument } from '@/lib/pipeline/process-document'
+import { generateSuggestedQuestions } from '@/lib/pipeline/generate-questions'
 import { getAuthenticatedUser } from '@/lib/auth/get-user'
 import { getUsageStatus } from '@/lib/usage/check-limits'
 import type { DocumentInsert } from '@/types/database'
@@ -160,6 +161,24 @@ export async function POST(request: NextRequest) {
         .from('documents')
         .update({ status: 'ready' as const })
         .eq('id', documentId)
+
+      // Fire-and-forget: generate suggested questions without blocking the response
+      const chunks = extractionResult.pages.map((p) => ({
+        content: p.content,
+        pageNumber: p.pageNumber,
+      }))
+      generateSuggestedQuestions(chunks)
+        .then(async (questions) => {
+          if (questions.length > 0) {
+            await supabase
+              .from('documents')
+              .update({ suggested_questions: questions })
+              .eq('id', documentId)
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to generate suggested questions:', err)
+        })
     } catch (pipelineError) {
       console.error('Pipeline error:', pipelineError)
 
