@@ -34,6 +34,8 @@ function GoogleIcon() {
   )
 }
 
+const GOOGLE_OAUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === 'true'
+
 function LoginForm() {
   const searchParams = useSearchParams()
 
@@ -66,10 +68,11 @@ function LoginForm() {
   async function handleGoogleLogin() {
     setError('')
     const supabase = createClient()
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
       },
     })
 
@@ -77,6 +80,7 @@ function LoginForm() {
       const msg = oauthError.message?.toLowerCase() ?? ''
       if (
         msg.includes('provider') ||
+        msg.includes('unsupported') ||
         ('error_code' in oauthError &&
           (oauthError as Record<string, unknown>).error_code === 'validation_failed')
       ) {
@@ -84,6 +88,11 @@ function LoginForm() {
       } else {
         setError(oauthError.message)
       }
+      return
+    }
+
+    if (data?.url) {
+      window.location.href = data.url
     }
   }
 
@@ -100,16 +109,25 @@ function LoginForm() {
           </div>
         )}
 
-        <Button variant="outline" size="lg" className="w-full gap-2" onClick={handleGoogleLogin}>
-          <GoogleIcon />
-          Continue with Google
-        </Button>
+        {GOOGLE_OAUTH_ENABLED && (
+          <>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full gap-2"
+              onClick={handleGoogleLogin}
+            >
+              <GoogleIcon />
+              Continue with Google
+            </Button>
 
-        <div className="flex items-center gap-3">
-          <Separator className="flex-1" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <Separator className="flex-1" />
-        </div>
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <Separator className="flex-1" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleEmailLogin} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
