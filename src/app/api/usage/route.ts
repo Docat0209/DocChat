@@ -11,7 +11,9 @@ export async function GET() {
 
   try {
     const usage = await getUsageStatus(user.id)
-    return NextResponse.json(usage)
+    return NextResponse.json(usage, {
+      headers: { 'Cache-Control': 'private, max-age=5' },
+    })
   } catch (error) {
     console.error('Usage API error:', error)
     return apiError('Failed to fetch usage status', 'USAGE_ERROR', 500)

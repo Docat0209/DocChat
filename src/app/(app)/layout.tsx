@@ -40,19 +40,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  // Re-fetch documents when pathname changes (e.g., after upload navigates to new doc)
+  // Fetch documents and plan in parallel on mount
   useEffect(() => {
-    fetchDocuments()
-  }, [fetchDocuments, pathname])
+    const supabase = createClient()
 
-  useEffect(() => {
-    async function fetchPlan() {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const fetchAll = async () => {
+      const [docsResult, userResult] = await Promise.all([
+        supabase
+          .from('documents')
+          .select(
+            'id, user_id, name, file_url, file_type, status, suggested_questions, created_at, updated_at',
+          )
+          .order('created_at', { ascending: false }),
+        supabase.auth.getUser(),
+      ])
+
+      if (docsResult.data) {
+        setDocuments(docsResult.data as Document[])
+      }
+      setIsLoading(false)
+
+      const user = userResult.data?.user
       if (!user) return
       setUserEmail(user.email ?? undefined)
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('plan')
@@ -62,8 +73,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         setPlan(profile.plan as SubscriptionPlan)
       }
     }
-    fetchPlan()
+
+    fetchAll()
   }, [])
+
+  // Re-fetch documents when pathname changes (e.g., after upload navigates to new doc)
+  useEffect(() => {
+    fetchDocuments()
+  }, [fetchDocuments, pathname])
 
   // Detect document status transitions and show toasts
   useEffect(() => {
