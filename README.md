@@ -9,6 +9,20 @@
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)](https://stripe.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
+## Screenshots
+
+### Landing Page
+![Landing Page](docs/screenshots/landing.png)
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Chat Interface
+![Chat Interface](docs/screenshots/chat.png)
+
+### Login
+![Login](docs/screenshots/login.png)
+
 ## Why This Exists
 
 Reading long documents is slow. Searching through PDFs is painful. DocChat lets you upload a PDF, DOCX, or TXT file and have a conversation with it -- ask questions in plain language and get accurate answers with exact page citations, so you can verify every response.
