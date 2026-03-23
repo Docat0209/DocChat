@@ -9,10 +9,10 @@
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)](https://stripe.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
-## Screenshots
-
-### Landing Page
 ![Landing Page](docs/screenshots/landing.png)
+
+<details>
+<summary>More Screenshots</summary>
 
 ### Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
@@ -22,6 +22,8 @@
 
 ### Login
 ![Login](docs/screenshots/login.png)
+
+</details>
 
 ## Why This Exists
 
