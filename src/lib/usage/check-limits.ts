@@ -21,14 +21,24 @@ function isBeforeToday(dateString: string): boolean {
 export async function getUsageStatus(userId: string): Promise<UsageStatus> {
   const supabase = createAdminClient()
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('plan, question_count_today, question_count_reset_at')
-    .eq('id', userId)
-    .single()
+  const [profileResult, countResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('plan, question_count_today, question_count_reset_at')
+      .eq('id', userId)
+      .single(),
+    supabase.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+  ])
+
+  const { data: profile, error: profileError } = profileResult
+  const { count: documentCount, error: countError } = countResult
 
   if (profileError || !profile) {
     throw new Error(`Failed to fetch profile: ${profileError?.message ?? 'Not found'}`)
+  }
+
+  if (countError) {
+    throw new Error(`Failed to count documents: ${countError.message}`)
   }
 
   const plan = profile.plan as SubscriptionPlan
@@ -44,15 +54,6 @@ export async function getUsageStatus(userId: string): Promise<UsageStatus> {
         question_count_reset_at: new Date().toISOString(),
       })
       .eq('id', userId)
-  }
-
-  const { count: documentCount, error: countError } = await supabase
-    .from('documents')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-
-  if (countError) {
-    throw new Error(`Failed to count documents: ${countError.message}`)
   }
 
   const planConfig = STRIPE_CONFIG.plans[plan]
