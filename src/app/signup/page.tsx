@@ -3,6 +3,8 @@
 import { type FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
+
+const GOOGLE_OAUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === 'true'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -85,10 +87,11 @@ export default function SignupPage() {
   async function handleGoogleLogin() {
     setError('')
     const supabase = createClient()
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
       },
     })
 
@@ -96,6 +99,7 @@ export default function SignupPage() {
       const msg = oauthError.message?.toLowerCase() ?? ''
       if (
         msg.includes('provider') ||
+        msg.includes('unsupported') ||
         ('error_code' in oauthError &&
           (oauthError as Record<string, unknown>).error_code === 'validation_failed')
       ) {
@@ -103,6 +107,11 @@ export default function SignupPage() {
       } else {
         setError(oauthError.message)
       }
+      return
+    }
+
+    if (data?.url) {
+      window.location.href = data.url
     }
   }
 
@@ -126,16 +135,25 @@ export default function SignupPage() {
             </div>
           )}
 
-          <Button variant="outline" size="lg" className="w-full gap-2" onClick={handleGoogleLogin}>
-            <GoogleIcon />
-            Continue with Google
-          </Button>
+          {GOOGLE_OAUTH_ENABLED && (
+            <>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full gap-2"
+                onClick={handleGoogleLogin}
+              >
+                <GoogleIcon />
+                Continue with Google
+              </Button>
 
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <Separator className="flex-1" />
-          </div>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-xs text-muted-foreground">or</span>
+                <Separator className="flex-1" />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleSignup} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">

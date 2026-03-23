@@ -31,7 +31,14 @@ export async function POST() {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    if (message.includes('API key') || message.includes('apiKey') || message.includes('Invalid')) {
+      return NextResponse.json(
+        { error: 'Stripe payments are not configured yet. Contact support to upgrade.' },
+        { status: 503 },
+      )
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
