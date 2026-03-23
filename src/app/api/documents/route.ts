@@ -21,7 +21,9 @@ export async function GET() {
       return apiError('Failed to fetch documents', 'FETCH_ERROR', 500)
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: { 'Cache-Control': 'private, max-age=5' },
+    })
   } catch {
     return apiError('Internal server error', 'INTERNAL_ERROR', 500)
   }
