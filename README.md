@@ -6,7 +6,6 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?logo=openai&logoColor=white)](https://openai.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)](https://stripe.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
 ![Landing Page](docs/screenshots/landing.png)
@@ -69,7 +68,6 @@ Open [http://localhost:3000](http://localhost:3000) and upload your first docume
 | Vector DB | pgvector (Supabase extension)                               |
 | LLM       | OpenAI GPT-4o-mini                                          |
 | RAG       | LangChain.js + Vercel AI SDK                                |
-| Payments  | Stripe (Checkout, Customer Portal, Webhooks)                |
 | Email     | Resend                                                      |
 | Testing   | Vitest, Testing Library                                     |
 | CI/CD     | GitHub Actions                                              |
@@ -83,7 +81,6 @@ flowchart LR
   NextJS --> Supabase["Supabase Auth + DB"]
   NextJS --> Storage["Supabase Storage"]
   NextJS --> OpenAI["OpenAI API"]
-  NextJS --> Stripe
   NextJS --> Resend
 
   subgraph RAG Pipeline
@@ -121,10 +118,6 @@ cp .env.local.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL`           | Supabase project URL                         | Supabase Dashboard > Settings > API                                  |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`      | Supabase anonymous/public key                | Supabase Dashboard > Settings > API                                  |
 | `SUPABASE_SERVICE_ROLE_KEY`          | Supabase service role key (server-side only) | Supabase Dashboard > Settings > API                                  |
-| `STRIPE_SECRET_KEY`                  | Stripe secret key                            | [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) |
-| `STRIPE_WEBHOOK_SECRET`              | Stripe webhook signing secret                | Stripe Dashboard > Webhooks                                          |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key                       | [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) |
-| `STRIPE_PRICE_ID_PRO`                | Stripe Price ID for the Pro plan             | Stripe Dashboard > Products (see Stripe Setup)                       |
 | `NEXT_PUBLIC_APP_URL`                | Your app URL                                 | `http://localhost:3000` for local dev                                |
 | `RESEND_API_KEY`                     | Resend API key for transactional email       | [resend.com/api-keys](https://resend.com/api-keys)                   |
 
@@ -146,28 +139,6 @@ cp .env.local.example .env.local
    ```
 
    Open the SQL Editor in your Supabase Dashboard, paste the contents of each file, and run them sequentially.
-
-4. **Enable Google OAuth** (optional). Go to Authentication > Providers > Google, enable it, and add your Google OAuth client ID and secret. Set the redirect URL to `https://<your-supabase-ref>.supabase.co/auth/v1/callback`.
-
-## Stripe Setup
-
-1. **Create a product** in the [Stripe Dashboard](https://dashboard.stripe.com/products). Name it "Pro" with a recurring price of $9/month.
-
-2. **Copy the Price ID** (starts with `price_`) and set it as `STRIPE_PRICE_ID_PRO` in your `.env.local`.
-
-3. **Create a webhook endpoint.** For production, point it to `https://yourdomain.com/api/stripe/webhook`. For local development, use the Stripe CLI:
-
-   ```bash
-   # Install the Stripe CLI, then:
-   stripe listen --forward-to localhost:3000/api/stripe/webhook
-   ```
-
-   Copy the webhook signing secret (`whsec_...`) and set it as `STRIPE_WEBHOOK_SECRET`.
-
-4. **Subscribe to these webhook events:**
-   - `checkout.session.completed`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
 
 ## Development
 
@@ -207,7 +178,6 @@ src/
     extraction/         # Text extraction (PDF, DOCX, TXT)
     pipeline/           # Document processing (chunk + embed)
     rag/                # Retrieval (similarity search)
-    stripe/             # Stripe client helpers
     supabase/           # Supabase client (browser + server + admin)
     usage/              # Usage tracking and limit checks
   types/                # TypeScript type definitions
